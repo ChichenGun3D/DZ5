@@ -4,12 +4,9 @@ class Program
 {
     static void PrintMatrix(int[,] matrix)
     {
-        int rows = matrix.GetLength(0);
-        int cols = matrix.GetLength(1);
-
-        for (int i = 0; i < rows; i++)
+        for (int i = 0; i < matrix.GetLength(0); i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (int j = 0; j < matrix.GetLength(1); j++)
             {
                 Console.Write(matrix[i, j] + "\t");
             }
@@ -17,81 +14,72 @@ class Program
         }
     }
 
-    static int[,] InputMatrix(int rows, int cols, string name)
+    static double[] AverageByMonth(int[,] temperature)
     {
-        int[,] matrix = new int[rows, cols];
+        int months = temperature.GetLength(0);
+        int days = temperature.GetLength(1);
 
-        Console.WriteLine($"Введите элементы матрицы {name} ({rows} строк, {cols} столбцов):");
+        double[] averages = new double[months];
 
-        for (int i = 0; i < rows; i++)
+        for (int i = 0; i < months; i++)
         {
-            for (int j = 0; j < cols; j++)
+            int sum = 0;
+            for (int j = 0; j < days; j++)
             {
-                Console.Write($"{name}[{i},{j}] = ");
-                matrix[i, j] = int.Parse(Console.ReadLine());
+                sum += temperature[i, j];
             }
+            averages[i] = (double)sum / days;
         }
 
-        return matrix;
+        return averages;
     }
 
-    static int[,] MultiplyMatrices(int[,] A, int[,] B)
+    static void SortAscending(double[] array)
     {
-        int rowsA = A.GetLength(0);
-        int colsA = A.GetLength(1);
-        int colsB = B.GetLength(1);
-
-        int[,] C = new int[rowsA, colsB];
-
-        for (int i = 0; i < rowsA; i++)
+        for (int i = 0; i < array.Length - 1; i++)
         {
-            for (int j = 0; j < colsB; j++)
+            for (int j = 0; j < array.Length - 1 - i; j++)
             {
-                int sum = 0;
-                for (int k = 0; k < colsA; k++)
+                if (array[j] > array[j + 1])
                 {
-                    sum = sum + A[i, k] * B[k, j];
+                    double temp = array[j];
+                    array[j] = array[j + 1];
+                    array[j + 1] = temp;
                 }
-                C[i, j] = sum;
             }
         }
-
-        return C;
     }
 
     static void Main(string[] args)
     {
-        Console.Write("Сколько строк в матрице A? ");
-        int rowsA = int.Parse(Console.ReadLine());
+        int[,] temperature = new int[12, 30];
+        Random rnd = new Random();
 
-        Console.Write("Сколько столбцов в матрице A? ");
-        int colsA = int.Parse(Console.ReadLine());
-
-        Console.Write("Сколько строк в матрице B? ");
-        int rowsB = int.Parse(Console.ReadLine());
-
-        Console.Write("Сколько столбцов в матрице B? ");
-        int colsB = int.Parse(Console.ReadLine());
-
-        if (colsA != rowsB)
+        for (int i = 0; i < 12; i++)
         {
-            Console.WriteLine("Ошибка: матрицы нельзя умножить!");
-            Console.WriteLine($"Столбцов в A = {colsA}, строк в B = {rowsB}. Они должны быть равны.");
-            return;
+            for (int j = 0; j < 30; j++)
+            {
+                temperature[i, j] = rnd.Next(-30, 36);
+            }
         }
 
-        int[,] A = InputMatrix(rowsA, colsA, "A");
-        int[,] B = InputMatrix(rowsB, colsB, "B");
+        Console.WriteLine("Температуры по месяцам:");
+        PrintMatrix(temperature);
 
-        Console.WriteLine("\nМатрица A:");
-        PrintMatrix(A);
+        double[] averages = AverageByMonth(temperature);
 
-        Console.WriteLine("\nМатрица B:");
-        PrintMatrix(B);
+        Console.WriteLine("\nСредние температуры по месяцам:");
+        for (int i = 0; i < averages.Length; i++)
+        {
+            Console.WriteLine($"Месяц {i + 1}: {averages[i]:F2}");
+        }
 
-        int[,] C = MultiplyMatrices(A, B);
+        SortAscending(averages);
 
-        Console.WriteLine("\nРезультат A × B:");
-        PrintMatrix(C);
+        Console.WriteLine("\nСредние температуры по возрастанию:");
+        for (int i = 0; i < averages.Length; i++)
+        {
+            Console.WriteLine($"{averages[i]:F2}");
+        }
     }
 }
