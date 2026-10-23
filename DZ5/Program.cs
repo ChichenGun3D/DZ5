@@ -1,18 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 
-class Student
+class Grandma
 {
-    public string LastName { get; set; }
-    public string FirstName { get; set; }
-    public int BirthYear { get; set; }
-    public string Exam { get; set; }
-    public int Score { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public List<string> Diseases { get; set; } = new List<string>();
+    public List<string> Medicines { get; set; } = new List<string>();
 
     public override string ToString()
     {
-        return $"{LastName} {FirstName}, {BirthYear}, {Exam}, {Score}";
+        string d = Diseases.Count == 0 ? "нет болезней" : string.Join(", ", Diseases);
+        return $"{Name} ({Age} лет) — болезни: {d}";
+    }
+}
+
+class Hospital
+{
+    public string Name { get; set; }
+    public List<string> TreatableDiseases { get; set; } = new List<string>();
+    public int Capacity { get; set; }
+    public Stack<Grandma> Patients { get; set; } = new Stack<Grandma>();
+
+    public override string ToString()
+    {
+        double percent = Capacity == 0 ? 0 : (double)Patients.Count / Capacity * 100;
+        return $"{Name} — лечит: {string.Join(", ", TreatableDiseases)}; " +
+               $"занято: {Patients.Count}/{Capacity} ({percent:F1}%)";
     }
 }
 
@@ -20,133 +34,178 @@ class Program
 {
     static void Main()
     {
-        List<Student> students = new List<Student>();
-
-        // Чтение студентов из файла
-        string fileName = "students.txt";
-        if (File.Exists(fileName))
+        // ==== БОЛЬНИЦЫ ====
+        List<Hospital> hospitals = new List<Hospital>
         {
-            string[] lines = File.ReadAllLines(fileName);
-            foreach (string line in lines)
+            new Hospital
             {
-                if (line.Trim() == "") continue;
-
-                string[] parts = line.Split(';');
-                Student s = new Student
-                {
-                    LastName = parts[0],
-                    FirstName = parts[1],
-                    BirthYear = int.Parse(parts[2]),
-                    Exam = parts[3],
-                    Score = int.Parse(parts[4])
-                };
-                students.Add(s);
+                Name = "Городская больница №1",
+                TreatableDiseases = new List<string> { "Грипп", "Простуда", "Ангина", "Давление" },
+                Capacity = 3
+            },
+            new Hospital
+            {
+                Name = "Кардиоцентр",
+                TreatableDiseases = new List<string> { "Давление", "Аритмия", "Инфаркт" },
+                Capacity = 2
+            },
+            new Hospital
+            {
+                Name = "Инфекционная больница",
+                TreatableDiseases = new List<string> { "Грипп", "Ковид", "Ангина" },
+                Capacity = 4
+            },
+            new Hospital
+            {
+                Name = "Поликлиника №5",
+                TreatableDiseases = new List<string> { "Простуда", "Гастрит" },
+                Capacity = 2
             }
-        }
-        else
-        {
-            Console.WriteLine($"Файл {fileName} не найден, список пуст.");
-        }
+        };
 
-        // Меню
-        while (true)
-        {
-            Console.WriteLine("\n=== МЕНЮ ===");
-            Console.WriteLine("Новый студент — добавить");
-            Console.WriteLine("Удалить — удалить по фамилии и имени");
-            Console.WriteLine("Сортировать — сортировка по баллам");
-            Console.WriteLine("Вывести — показать всех");
-            Console.WriteLine("Выход — завершить");
-            Console.Write("Ваш выбор: ");
-            string choice = Console.ReadLine();
+        // ==== ОЧЕРЕДЬ БАБУЛЬ ====
+        Queue<Grandma> grandmas = new Queue<Grandma>();
 
-            if (choice == "Новый студент")
+        Console.Write("Сколько бабуль пришло? ");
+        int n = int.Parse(Console.ReadLine());
+
+        for (int i = 0; i < n; i++)
+        {
+            Console.WriteLine($"\n--- Бабуля #{i + 1} ---");
+            Grandma g = new Grandma();
+
+            Console.Write("Имя: ");
+            g.Name = Console.ReadLine();
+
+            Console.Write("Возраст: ");
+            g.Age = int.Parse(Console.ReadLine());
+
+            Console.Write("Сколько болезней? ");
+            int dc = int.Parse(Console.ReadLine());
+
+            for (int d = 0; d < dc; d++)
             {
-                Student s = new Student();
+                Console.Write($"Болезнь #{d + 1}: ");
+                string disease = Console.ReadLine();
+                g.Diseases.Add(disease);
 
-                Console.Write("Фамилия: ");
-                s.LastName = Console.ReadLine();
-
-                Console.Write("Имя: ");
-                s.FirstName = Console.ReadLine();
-
-                Console.Write("Год рождения: ");
-                s.BirthYear = int.Parse(Console.ReadLine());
-
-                Console.Write("Экзамен: ");
-                s.Exam = Console.ReadLine();
-
-                Console.Write("Баллы: ");
-                s.Score = int.Parse(Console.ReadLine());
-
-                students.Add(s);
-                Console.WriteLine("Студент добавлен.");
+                Console.Write($"Лекарство от {disease}: ");
+                g.Medicines.Add(Console.ReadLine());
             }
-            else if (choice == "Удалить")
+
+            grandmas.Enqueue(g);
+        }
+
+        // ==== РАСПРЕДЕЛЕНИЕ ====
+        List<Grandma> onStreet = new List<Grandma>();
+
+        while (grandmas.Count > 0)
+        {
+            Grandma g = grandmas.Dequeue();
+
+            // Бабуля без болезней — в первую свободную
+            if (g.Diseases.Count == 0)
             {
-                Console.Write("Фамилия: ");
-                string last = Console.ReadLine();
-
-                Console.Write("Имя: ");
-                string first = Console.ReadLine();
-
-                Student found = null;
-                foreach (Student s in students)
+                Hospital free = null;
+                foreach (Hospital h in hospitals)
                 {
-                    if (s.LastName == last && s.FirstName == first)
+                    if (h.Patients.Count < h.Capacity)
                     {
-                        found = s;
+                        free = h;
                         break;
                     }
                 }
+                if (free != null)
+                {
+                    free.Patients.Push(g);
+                    Console.WriteLine($"{g.Name} (без болезней) → {free.Name} (просто спросить)");
+                }
+                else
+                {
+                    onStreet.Add(g);
+                    Console.WriteLine($"{g.Name} → все больницы заняты, плачет на улице");
+                }
+                continue;
+            }
 
-                if (found != null)
+            // Ищем больницу, которая лечит > 50% болезней и не заполнена
+            Hospital best = null;
+            int bestMatched = -1;
+
+            foreach (Hospital h in hospitals)
+            {
+                if (h.Patients.Count >= h.Capacity)
+                    continue;
+
+                int matched = 0;
+                foreach (string disease in g.Diseases)
                 {
-                    students.Remove(found);
-                    Console.WriteLine("Студент удалён.");
+                    if (h.TreatableDiseases.Contains(disease))
+                        matched++;
                 }
-                else
+
+                double ratio = (double)matched / g.Diseases.Count;
+                if (ratio > 0.5 && matched > bestMatched)
                 {
-                    Console.WriteLine("Студент не найден.");
+                    best = h;
+                    bestMatched = matched;
                 }
             }
-            else if (choice == "Сортировать")
+
+            if (best != null)
             {
-                for (int i = 0; i < students.Count - 1; i++)
-                {
-                    for (int j = 0; j < students.Count - 1 - i; j++)
-                    {
-                        if (students[j].Score > students[j + 1].Score)
-                        {
-                            Student temp = students[j];
-                            students[j] = students[j + 1];
-                            students[j + 1] = temp;
-                        }
-                    }
-                }
-                Console.WriteLine("Отсортировано по баллам (по возрастанию).");
-            }
-            else if (choice == "Вывести")
-            {
-                if (students.Count == 0)
-                {
-                    Console.WriteLine("Список пуст.");
-                }
-                else
-                {
-                    for (int i = 0; i < students.Count; i++)
-                    {
-                        Console.WriteLine((i + 1) + ". " + students[i]);
-                    }
-                }
-            }
-            else if (choice == "Выход")
-            {
-                break;
+                best.Patients.Push(g);
+                Console.WriteLine($"{g.Name} → {best.Name} (лечит {bestMatched} из {g.Diseases.Count} болезней)");
             }
             else
             {
-                Console.WriteLine("Неизвестная команда.");
+                onStreet.Add(g);
+                Console.WriteLine($"{g.Name} → ни одна больница не берёт, плачет на улице");
+            }
+        }
+
+        // ==== ВЫВОД ====
+        Console.WriteLine("\n=== ВСЕ БАБУЛИ ===");
+        foreach (Hospital h in hospitals)
+        {
+            foreach (Grandma g in h.Patients)
+            {
+                Console.WriteLine(g);
+            }
+        }
+        foreach (Grandma g in onStreet)
+        {
+            Console.WriteLine(g + " [на улице]");
+        }
+
+        Console.WriteLine("\n=== БОЛЬНИЦЫ ===");
+        foreach (Hospital h in hospitals)
+        {
+            Console.WriteLine(h);
+            Console.WriteLine("  Пациенты:");
+            if (h.Patients.Count == 0)
+            {
+                Console.WriteLine("   (пусто)");
+            }
+            else
+            {
+                foreach (Grandma g in h.Patients)
+                {
+                    Console.WriteLine("   - " + g.Name);
+                }
+            }
+        }
+
+        Console.WriteLine("\n=== НА УЛИЦЕ ===");
+        if (onStreet.Count == 0)
+        {
+            Console.WriteLine("(никого)");
+        }
+        else
+        {
+            foreach (Grandma g in onStreet)
+            {
+                Console.WriteLine(g);
             }
         }
     }
