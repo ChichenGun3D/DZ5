@@ -1,85 +1,41 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 
 class Program
 {
-    static void PrintMatrix(int[,] matrix)
+    static void CountLetters(List<char> text, out int vowels, out int consonants)
     {
-        for (int i = 0; i < matrix.GetLength(0); i++)
+        vowels = 0;
+        consonants = 0;
+
+        string vowelLetters = "аеёиоуыэюяАЕЁИОУЫЭЮЯaeiouyAEIOUY";
+        string consonantLetters = "бвгджзйклмнпрстфхцчшщъьБВГДЖЗЙКЛМНПРСТФХЦЧШЩЪЬbcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ";
+
+        for (int i = 0; i < text.Count; i++)
         {
-            for (int j = 0; j < matrix.GetLength(1); j++)
-            {
-                Console.Write(matrix[i, j] + "\t");
-            }
-            Console.WriteLine();
-        }
-    }
-
-    static double[] AverageByMonth(int[,] temperature)
-    {
-        int months = temperature.GetLength(0);
-        int days = temperature.GetLength(1);
-
-        double[] averages = new double[months];
-
-        for (int i = 0; i < months; i++)
-        {
-            int sum = 0;
-            for (int j = 0; j < days; j++)
-            {
-                sum += temperature[i, j];
-            }
-            averages[i] = (double)sum / days;
-        }
-
-        return averages;
-    }
-
-    static void SortAscending(double[] array)
-    {
-        for (int i = 0; i < array.Length - 1; i++)
-        {
-            for (int j = 0; j < array.Length - 1 - i; j++)
-            {
-                if (array[j] > array[j + 1])
-                {
-                    double temp = array[j];
-                    array[j] = array[j + 1];
-                    array[j + 1] = temp;
-                }
-            }
+            if (vowelLetters.IndexOf(text[i]) != -1)
+                vowels++;
+            else if (consonantLetters.IndexOf(text[i]) != -1)
+                consonants++;
         }
     }
 
     static void Main(string[] args)
     {
-        int[,] temperature = new int[12, 30];
-        Random rnd = new Random();
-
-        for (int i = 0; i < 12; i++)
+        if (args.Length == 0)
         {
-            for (int j = 0; j < 30; j++)
-            {
-                temperature[i, j] = rnd.Next(-30, 36);
-            }
+            Console.WriteLine("Укажите имя файла!");
+            return;
         }
 
-        Console.WriteLine("Температуры по месяцам:");
-        PrintMatrix(temperature);
+        string text = File.ReadAllText(args[0]);
+        List<char> chars = new List<char>(text.ToCharArray());
 
-        double[] averages = AverageByMonth(temperature);
+        int vowels, consonants;
+        CountLetters(chars, out vowels, out consonants);
 
-        Console.WriteLine("\nСредние температуры по месяцам:");
-        for (int i = 0; i < averages.Length; i++)
-        {
-            Console.WriteLine($"Месяц {i + 1}: {averages[i]:F2}");
-        }
-
-        SortAscending(averages);
-
-        Console.WriteLine("\nСредние температуры по возрастанию:");
-        for (int i = 0; i < averages.Length; i++)
-        {
-            Console.WriteLine($"{averages[i]:F2}");
-        }
+        Console.WriteLine("Гласных: " + vowels);
+        Console.WriteLine("Согласных: " + consonants);
     }
 }
